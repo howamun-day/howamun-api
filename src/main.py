@@ -8,7 +8,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["localhost:4200"],
     allow_credentials=True,
-    allow_methods=["POST, PUT, GET"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -19,42 +19,45 @@ db = deta.Base("whatmoon")
 
 @app.get("/")
 async def root():
-    return {"message": "ほわむん♪"}
+    return {"data": {"message": "ほわむん♪"}}
 
 
-@app.put("/v1/pressed/{key}")
-async def update_like_counts(key: str):
+@app.put("/v1/increment/{key}")
+async def increment_like_counts(key: str, num_increment: int = 1):
     res = db.get(key)
     if not res:
-        return {"response": f"not found: {key}"}
+        return {"data": {"message": f"ほわっ…keyが見つからなかったです……: {key}"}}
     else:
-        db.update({"likes": db.util.increment()}, key)
-        res = await get_like_counts(key)
-        return {"response": res}
+        db.update({"likes": db.util.increment(num_increment)}, key)
+        res = db.get(key)
+        return {
+            "data": {
+                "message": f"ほわっ…いいねが{num_increment}増えました♪",
+                "response": res,
+            },
+        }
 
 
 @app.get("/v1/get/{key}")
 async def get_like_counts(key: str):
     res = db.get(key)
     if not res:
-        return {"response": f"not found: {key}"}
+        return {"data": {"message": f"ほわっ…keyが見つからなかったです……: {key}"}}
     else:
-        return {"response": res}
+        return {
+            "data": {"message": "ほわっ…いいねの数を取得しました♪", "response": res}
+        }
 
 
 @app.post("/v1/create/{key}")
 async def create_like_button(key: str, likes: int = 0):
     if db.get(key):
-        return {"response": f"already exists: {key}"}
+        return {"data": {"message": f"ほわっ…keyがすでに存在しています……: {key}"}}
     else:
         res = db.put({"likes": likes}, key)
-        return {"response": res}
-
-
-@app.delete("/v1/delete/{key}")
-async def delete_like_button(key: str):
-    if not db.get(key):
-        return {"response": f"not found: {key}"}
-    else:
-        db.delete(key)
-        return {"response": f"ほわっ… {key} を削除しましたっ！"}
+        return {
+            "data": {
+                "message": f"ほわっ…新しいkey: {key} を作成しました♪",
+                "response": res,
+            }
+        }
